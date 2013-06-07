@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<!DOCTYPE project>
+<project name="Boilerplate Build" default="build" basedir="."><!-- one back since we're in build/ -->
+    
+    <!-- load shell environment -->
+    <property environment="ENV" />
+	
+	<property name="dir.source" value="." />
+	<property name="dir.publish" value="publish" />
+	<property name="dir.build" value="build" />
+	<property name="dir.build.tools" value="${dir.build}/tools" />
+	
+	<taskdef resource="net/sf/antcontrib/antlib.xml">
+        <classpath>
+            <pathelement location="${basedir}/${dir.build.tools}/ant-contrib-1.0b3.jar"/>
+        </classpath>
+    </taskdef>
+	
+	<!-- files -->
+	<property name="file.default.exclude" value=".gitignore, .project, .settings, .js*intrc, README.markdown, README.md, readme.md, CHANGELOG.md, CONTRIBUTING.md, LICENSE.md, **/.git/**, **/.svn/**, doc/, ${dir.test}/**, ${dir.demo}/**, ${dir.intermediate}/**, ${dir.publish}/**, ${dir.build}/**, **/nbproject/**, *.komodoproject, **/.komodotools/**, **/dwsync.xml, **_notes, **/.hg/**, **/.idea/**" />
+	
+	<target name="build" depends="init,clean,copy" />
+
+	<target name="init">
+		<tstamp>
+			<format property="timestamp" pattern="yyyy-MM-dd_HH-mm-ss"/>
+		</tstamp>
+		<property name="build.log.dir" location="${dir.build}/buildlogs"/>
+		<mkdir dir="${build.log.dir}"/>
+		<property name="build.log.filename" value="build_${timestamp}.log"/>
+		<record name="${build.log.dir}/${build.log.filename}" loglevel="verbose" append="false"/>
+		<echo message="Build logged to ${build.log.filename}"/>
+	</target>
+	
+	<target name="clean" description="(PRIVATE) Wipe the previous build (Deletes the dir.publish directory">
+        <!-- This is a private target -->
+        <echo message="Cleaning up previous publish directory..."/>
+        <delete dir="./${dir.publish}/"/>
+    </target>
+	
+	<target name="mkdir">
+        <condition property="publish.exists">
+            <available file="${dir.publish}" type="dir"/>
+        </condition>
+		<if>
+			<or>
+				<equals arg1="${dir.publish}" arg2="."/>
+				<equals arg1="${dir.publish}" arg2=".."/>
+				<equals arg1="${dir.publish}" arg2="/"/>
+				<equals arg1="${dir.publish}" arg2="./"/>
+				<equals arg1="${dir.publish}" arg2="../"/>
+			</or>
+            <then>
+                <fail message="Your dir.publish folder is set to ${dir.publish} which could delete your entire site or worse. Change it in project.properties"/>
+            </then>
+            <else>
+                <echo message="Creating directory structure... ${dir.publish}"/>
+                <if>
+                    <and>
+                        <equals arg1="${publish.exists}" arg2="true"/>
+                    </and>
+                    <then>
+                        <echo message="The directories ${dir.publish} already exist."/>
+                    </then>
+                    <else>
+                        <mkdir dir="${dir.publish}"/>
+                        <copy todir="${dir.publish}" includeEmptyDirs="true">
+                            <dirset dir="${dir.source}/" excludes="${file.default.exclude}, ${file.exclude}" includes="*"/>
+                        </copy>
+                    </else>
+                </if>
+            </else>
+		</if>
+	</target>
+	
+	<target name="copy" depends="mkdir">
+        <!-- This is a private target -->
+        <!-- Copies all files, including .css and .js files for when you aren't minifying-->
+        <echo message="Copying over all files..."/>
+        <copy todir="./${dir.publish}">
+            <fileset dir="${dir.source}/" excludes="${file.default.exclude}, ${file.exclude}"></fileset>
+        </copy>
+        <echo message="A copy of all files are now in: ./${dir.publish}."/>
+    </target>
+	
+</project>
